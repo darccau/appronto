@@ -8,7 +8,6 @@ module.exports = {
 
   async create(req, res, next) {
     try {
-      console.log(req.body)
       const { first_name } = req.body
       const { last_name } = req.body
       const { report } = req.body
@@ -35,14 +34,32 @@ module.exports = {
     }
   },
 
+  async update(req, res, next) {
+    try {
+      const { id } = req.params
+      const { first_name } = req.body
+      const { last_name } = req.body
+      const { report } = req.body
+
+      console.log(id, first_name, last_name, report)
+
+      await knex('report')
+        .update({ first_name, last_name, report })
+        .where({ id })
+      return res.send()
+
+    } catch (error) {
+      console.error(error)
+    }
+  },
+
   async delete(req, res, next) {
     try {
       const { id } = req.params
-      console.log(id)
+
       await knex('report')
       .where({ id })
       .del()
-      // console.log('all right')
     }
     catch(error) {
       console.error(error)
@@ -50,5 +67,4 @@ module.exports = {
   }
 
 }
-
 
