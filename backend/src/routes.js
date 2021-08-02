@@ -9,12 +9,12 @@ const upload = multer(multerConfig)
 
 router.get('/patients', patientController.index)
 
-router.post('/patients', patientController.create)
+router.post('/patient', patientController.create)
 
-router.put('/patients/:id', patientController.update)
+router.put('/patient/:id', patientController.update)
 
-router.delete('/patients/:id', patientController.delete)
+router.delete('/patient/:id', patientController.delete)
 
-router.post('/patients/reports', upload.array('reports'), patientController.upload)
+router.post('/patient/reports', upload.array('reports'), patientController.upload)
 
 module.exports = router
