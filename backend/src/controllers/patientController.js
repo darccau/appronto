@@ -14,7 +14,8 @@ module.exports = {
 
       await knex('report')
         .insert({ first_name, last_name, report })
-    } catch (error) {
+    } 
+    catch (error) {
       console.error(error)
     }
   },
@@ -27,7 +28,7 @@ module.exports = {
 
       await knex('report')
       .update({ first_name, last_name, report })
-      .whe
+      .where(id)
     }
     catch (error) {
       console.error(error)
@@ -41,12 +42,9 @@ module.exports = {
       const { last_name } = req.body
       const { report } = req.body
 
-      console.log(id, first_name, last_name, report)
-
       await knex('report')
         .update({ first_name, last_name, report })
         .where({ id })
-      return res.send()
 
     } catch (error) {
       console.error(error)
@@ -60,11 +58,16 @@ module.exports = {
       await knex('report')
       .where({ id })
       .del()
+
+      res.send(`${id} was deleted`)
     }
     catch(error) {
       console.error(error)
     }
-  }
+  },
 
+  async upload(req, res, next) {
+    res.send('File was uploaded')
+  }
 }
 
