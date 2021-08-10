@@ -6,6 +6,20 @@ module.exports = {
     return res.json(results)
   },
 
+  async consultation(req, res, next) {
+    try {
+      const { id } = req.params
+
+      const results = await knex('report')
+        .where({ id })
+      console.log(results)
+      res.send('ok')
+    } 
+    catch (error) {
+      console.error(error)
+    }
+  },
+
   async create(req, res, next) {
     try {
       const { first_name } = req.body
@@ -46,7 +60,8 @@ module.exports = {
         .update({ first_name, last_name, report })
         .where({ id })
 
-    } catch (error) {
+    }
+    catch (error) {
       console.error(error)
     }
   },

@@ -9,6 +9,8 @@ const upload = multer(multerConfig)
 
 router.get('/patients', patientController.index)
 
+router.get('/patient/:id', patientController.consultation)
+
 router.post('/patient', patientController.create)
 
 router.put('/patient/:id', patientController.update)
