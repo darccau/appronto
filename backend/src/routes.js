@@ -1,7 +1,7 @@
 const express = require('express')
 const multer = require('multer')
-const multerConfig = require('../config/multer.js')
 
+const multerConfig = require('./config/multer.js')
 const patientController = require('./controllers/patientController')
 
 const router = express.Router()
