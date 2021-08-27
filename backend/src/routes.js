@@ -2,21 +2,24 @@ const express = require('express')
 const multer = require('multer')
 
 const multerConfig = require('./config/multer.js')
-const patientController = require('./controllers/patientController')
+
+const appointment = require('./controllers/appointment')
+const user = require('./controllers/user')
 
 const router = express.Router()
 const upload = multer(multerConfig)
 
-router.get('/patients', patientController.index)
+router.post('/user/create', user.createUser)
 
-router.get('/patient/:id', patientController.consultation)
+router.post('/appointment/create', appointment.createAppointment)
 
-router.post('/patient', patientController.create)
+router.post('/appointment/upload/reports', upload.array('reports'),
+  appointment.uploadReports)
 
-router.put('/patient/:id', patientController.update)
+router.post('/user/credentials', user.credentials) 
 
-router.delete('/patient/:id', patientController.delete)
+router.post('/appointment/appointments', appointment.appointmentsByUsers)
 
-router.post('/patient/reports', upload.array('reports'), patientController.upload)
+router.post('/appointments/reports', appointment.reports)
 
 module.exports = router
