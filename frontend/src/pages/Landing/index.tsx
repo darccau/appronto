@@ -7,6 +7,10 @@ import { Link } from 'react-router-dom'
 
 import './styles.css';
 
+        // <Link to="/orphanages/create" className="enter-app">
+        //   <FaArrowRight size={26} color="rgba(0, 0, 0, 0.6)" />
+        // </Link>
+
 export default function Landing() {
   return (
     <div id="page-landing">
@@ -16,11 +20,17 @@ export default function Landing() {
         <main>
           <h1>Seus exames com voce!</h1>
           <p>Gerencie seus prontuarios e torne sua vida mais simples</p>
+
         </main>
 
-        <Link to="/orphanages/create" className="enter-app">
+        <Link to="/user/create" className="enter-app">
           <FaArrowRight size={26} color="rgba(0, 0, 0, 0.6)" />
         </Link>
+
+        <Link to="/appointment/create" className="enter-app">
+          <FaArrowRight size={26} color="rgba(red, 0, 0, 0.6)" />
+        </Link>
+
       </div>
     </div>
   );
