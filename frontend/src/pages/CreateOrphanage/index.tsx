@@ -1,4 +1,5 @@
 import React from "react";
+import axios from 'axios';
 
 import PrimaryButton from "../../components/PrimaryButton";
 import Sidebar from "../../components/Sidebar";
@@ -6,25 +7,30 @@ import Sidebar from "../../components/Sidebar";
 import './styles.css';
 import { FiPlus } from "react-icons/fi";
 
+const fuck = axios.get('http://localhost:1337/test')
+fuck.then(response => {
+  console.log(response.data)
+  })
+
+
 export default function OrphanagesMap() {
   return (
-    <div id="page-create-orphanage">
+      <div id="page-create-orphanage">
       <Sidebar />
-
       <main>
-        <form className="create-orphanage-form">
-          <fieldset>
-            <legend>Create Appointment</legend>
+      <form className="create-orphanage-form">
+      <fieldset>
+      <legend>Create Appointment</legend>
+      <div className="input-block">
+      <label htmlFor="name">Doctor name</label>
+      <input id="name" />
+      </div>
 
-            <div className="input-block">
-              <label htmlFor="name">Doctor name</label>
-              <input id="name" />
-            </div>
 
-            <div className="input-block">
-              <label htmlFor="name">Appointment type</label>
-              <input id="name" />
-            </div>
+      <div className="input-block">
+      <label htmlFor="name">Appointment type</label>
+      <input id="name" />
+      </div>
 
             <div className="input-block">
               <label htmlFor="about">Note</label>
