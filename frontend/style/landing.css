@@ -1,0 +1,27 @@
+body {
+  background-color: #0c0f3d;
+  color: white;
+}
+
+h1 {
+  align: left;
+}
+
+img {
+}
+
+.login {
+  align: center;
+}
+
+.login img {
+  width: 150px;
+  height: 300px;
+}
+
+input {
+  border-style: solid;
+  border-color: black;
+  border-radius: 20px;
+  padding: 10px;
+}
