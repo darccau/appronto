@@ -1,0 +1,11 @@
+version: '3.8'
+services:
+  database:
+    image: postgres
+    restart: always
+    environment:
+      - POSTGRES_USER=appronto
+      - POSTGRES_PASSWORD=appronto
+      - EDITOR=vi
+    ports:
+      - '5432:5432'
