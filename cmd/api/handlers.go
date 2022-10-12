@@ -12,7 +12,7 @@ func (app *application) createUser(w http.ResponseWriter, r *http.Request) {
 func (app *application) showUser(w http.ResponseWriter, r *http.Request) {
 	id, err := app.readIdParam(r)
 	if err != nil {
-		http.NotFound(w, r)
+		app.notFoundResponse(w, r)
 		return
 	}
 

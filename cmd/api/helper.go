@@ -22,7 +22,7 @@ func (app *application) readIdParam(r *http.Request) (int64, error) {
 
 type envelope map[string]any
 
-func (app *application) writeJson(w http.ResponseWriter, status int, data envelope, headers http.Header) error {
+func (app *application) writeJSON(w http.ResponseWriter, status int, data envelope, headers http.Header) error {
 	js, err := json.MarshalIndent(data, "", "\t")
 	if err != nil {
 		return err
