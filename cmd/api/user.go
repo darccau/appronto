@@ -18,7 +18,7 @@ func (app *application) createUser(w http.ResponseWriter, r *http.Request) {
 
 	err := app.readJSON(w, r, &input)
 	if err != nil {
-		app.errorResponse(w, r, http.StatusBadRequest, err.Error())
+		app.badRequestResponse(w, r, err)
 		return
 	}
 
@@ -45,3 +45,5 @@ func (app *application) showUserHandler(w http.ResponseWriter, r *http.Request) 
 		app.serverErrorResponse(w, r, err)
 	}
 }
+
+// v := validator
