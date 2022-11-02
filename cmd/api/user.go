@@ -1,9 +1,9 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
-	"time"
 
 	"github.com/darccau/appronto/internal/data"
 )
@@ -22,26 +22,47 @@ func (app *application) createUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Fprintf(w, "%+v\n", input)
+	user := &data.User{
+		FirstName: input.FirstName,
+		LastName:  input.LastName,
+		Password:  input.Password,
+		Email:     input.Email,
+	}
+
+	err = app.models.Users.Insert(user)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	headers := make(http.Header)
+	headers.Set("Location", fmt.Sprintf("/v1/movies/%d", user.Id))
+
+	err = app.writeJSON(w, http.StatusCreated, envelope{"user": user}, headers)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+	}
 }
 
-func (app *application) showUserHandler(w http.ResponseWriter, r *http.Request) {
+func (app *application) showUser(w http.ResponseWriter, r *http.Request) {
 	id, err := app.readIdParam(r)
 	if err != nil {
 		app.notFoundResponse(w, r)
+		return
 	}
-
-	user := data.User{
-		Id:        id,
-		FirstName: "Eduardo",
-		LastName:  "Paixao",
-		Email:     "darccau@gmail.com",
-		CreatedAt: time.Now(),
+	user, err := app.models.Users.Get(id)
+	if err != nil {
+		switch {
+		case errors.Is(err, data.ErrRecordNotFound):
+			app.notFoundResponse(w, r)
+		default:
+			app.serverErrorResponse(w, r, err)
+		}
+		return
 	}
 
 	err = app.writeJSON(w, http.StatusOK, envelope{"user": user}, nil)
 	if err != nil {
-		app.logger.Print(err)
 		app.serverErrorResponse(w, r, err)
 	}
 }

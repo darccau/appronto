@@ -10,6 +10,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/darccau/appronto/internal/data"
 	_ "github.com/lib/pq"
 )
 
@@ -29,6 +30,7 @@ type config struct {
 type application struct {
 	config config
 	logger *log.Logger
+	models data.Models
 }
 
 func main() {
@@ -46,9 +48,18 @@ func main() {
 
 	logger := log.New(os.Stdout, "", log.Ldate|log.Ltime)
 
+	db, err := OpenDB(cfg)
+	if err != nil {
+		logger.Fatal(err)
+	}
+
+	defer db.Close()
+	logger.Printf("Database connection pool established")
+
 	app := &application{
 		config: cfg,
 		logger: logger,
+		models: data.NewModels(db),
 	}
 
 	srv := &http.Server{
@@ -61,13 +72,6 @@ func main() {
 
 	// Start the HTTP server.
 	logger.Printf("starting %s server on %s", cfg.env, srv.Addr)
-
-	db, err := OpenDB(cfg)
-	if err != nil {
-		logger.Fatal(err)
-	}
-	defer db.Close()
-	logger.Printf("Database connection pool established")
 
 	err = srv.ListenAndServe()
 	logger.Fatal(err)
