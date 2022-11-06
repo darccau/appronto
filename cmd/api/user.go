@@ -67,4 +67,53 @@ func (app *application) showUser(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func (app *application) updateUser(w http.ResponseWriter, r *http.Request) {
+	id, err := app.readIdParam(r)
+	if err != nil {
+		app.notFoundResponse(w, r)
+		return
+	}
+
+	user, err := app.models.Users.Get(id)
+	if err != nil {
+		switch {
+		case errors.Is(err, data.ErrRecordNotFound):
+			app.notFoundResponse(w, r)
+		default:
+			app.serverErrorResponse(w, r, err)
+		}
+		return
+	}
+
+	var input struct {
+		FirstName string `json:"first_name"`
+		LastName  string `json:"last_name"`
+		Password  string `json:"password"`
+		Email     string `json:"email"`
+	}
+
+	err = app.readJSON(w, r, &input)
+	if err != nil {
+		app.badRequestResponse(w, r, err)
+		return
+	}
+
+	user.FirstName = input.FirstName
+	user.LastName = input.LastName
+	user.Password = input.Password
+	user.Email = input.Email
+
+	// err =
+	app.models.Users.Update(user)
+	// if err != nil {
+	// 	app.serverErrorResponse(w, r, err)
+	// 	return
+	// }
+
+	err = app.writeJSON(w, http.StatusOK, envelope{"user": user}, nil)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+	}
+}
+
 // v := validator

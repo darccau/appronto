@@ -60,8 +60,21 @@ func (u UserModel) Get(id int64) (*User, error) {
 	return &user, nil
 }
 
-func (u UserModel) Update(user *User) error {
-	return nil
+func (u UserModel) Update(user *User) {
+	query := `
+  UPDATE users
+  SET first_name = $1, last_name = $2, password = $3, email = $4
+  where id = $5
+  `
+	args := []any{
+		user.Id,
+		user.FirstName,
+		user.LastName,
+		user.Password,
+		user.Email,
+	}
+
+	u.DB.QueryRow(query, args...)
 }
 
 func (u UserModel) Delete(id int64) error {
