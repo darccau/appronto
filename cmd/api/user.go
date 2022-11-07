@@ -103,14 +103,34 @@ func (app *application) updateUser(w http.ResponseWriter, r *http.Request) {
 	user.Password = input.Password
 	user.Email = input.Email
 
-	// err =
+	// check error
 	app.models.Users.Update(user)
-	// if err != nil {
-	// 	app.serverErrorResponse(w, r, err)
-	// 	return
-	// }
 
 	err = app.writeJSON(w, http.StatusOK, envelope{"user": user}, nil)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+	}
+}
+
+func (app *application) deleteUser(w http.ResponseWriter, r *http.Request) {
+	id, err := app.readIdParam(r)
+	if err != nil {
+		app.notFoundResponse(w, r)
+		return
+	}
+
+	err = app.models.Users.Delete(id)
+	if err != nil {
+		switch {
+		case errors.Is(err, data.ErrRecordNotFound):
+			app.notFoundResponse(w, r)
+		default:
+			app.serverErrorResponse(w, r, err)
+		}
+		return
+	}
+
+	err = app.writeJSON(w, http.StatusOK, envelope{"message": "user was successfully deleted"}, nil)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 	}
