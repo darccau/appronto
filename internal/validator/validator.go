@@ -1,26 +1,28 @@
 package validator
 
-var EmailRX = regex.MustCompile("^[a-zA-Z0-9.!#$%&'*+\\/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-")
+import "regexp"
+
+var EmailRX = regexp.MustCompile("^[a-zA-Z0-9.!#$%&'*+\\/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\. [a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$")
 
 type Validator struct {
 	Errors map[string]string
 }
 
 func New() *Validator {
-	return &Validator{Errors: make([string]string)}
+	return &Validator{Errors: make(map[string]string)}
 }
 
 func (v *Validator) Valid() bool {
 	return len(v.Errors) == 0
 }
 
-func (v *Validator) addError(key, message) {
+func (v *Validator) addError(key, message string) {
 	if _, exists := v.Errors[key]; !exists {
-		v.Error[key] = message
+		v.Errors[key] = message
 	}
 }
 
-func (v *Validato) check(ok bool, key, message string) {
+func (v *Validator) Check(ok bool, key, message string) {
 	if !ok {
 		v.addError(key, message)
 	}
@@ -28,14 +30,14 @@ func (v *Validato) check(ok bool, key, message string) {
 
 func PermittedValue[T comparable](value T, permittedValues ...T) bool {
 	for i := range permittedValues {
-		if values == permittedValues[i] {
+		if value == permittedValues[i] {
 			return true
 		}
 	}
 	return false
 }
 
-func Matches(values string, rx *regexsp.Regexsp) bool {
+func Matches(value string, rx *regexp.Regexp) bool {
 	return rx.MatchString(value)
 }
 
