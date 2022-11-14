@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/darccau/appronto/internal/data"
+	"github.com/darccau/appronto/internal/validator"
 )
 
 func (app *application) createUser(w http.ResponseWriter, r *http.Request) {
@@ -28,6 +29,13 @@ func (app *application) createUser(w http.ResponseWriter, r *http.Request) {
 		Password:  input.Password,
 		Email:     input.Email,
 	}
+
+	v := validator.New()
+	if data.ValidateUsers(v, user); !v.Valid() {
+		app.failedValidationResponse(w, r, v.Errors)
+		return
+	}
+	fmt.Fprintf(w, "%v+\n", input)
 
 	err = app.models.Users.Insert(user)
 	if err != nil {

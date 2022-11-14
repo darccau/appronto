@@ -3,6 +3,8 @@ package data
 import (
 	"database/sql"
 	"errors"
+
+	"github.com/darccau/appronto/internal/validator"
 )
 
 type User struct {
@@ -15,6 +17,22 @@ type User struct {
 
 type UserModel struct {
 	DB *sql.DB
+}
+
+func ValidateUsers(v *validator.Validator, user *User) {
+	v.Check(user.FirstName != "", "first_name", "must be provided")
+	v.Check(len(user.FirstName) <= 50, "first_name", "most not be more than 500bytes long")
+
+	v.Check(user.LastName != "", "last_name", "must be provided")
+	v.Check(len(user.LastName) <= 50, "last_name", "most not be more than 500bytes long")
+
+	v.Check(user.Password != "", "password", "must be provided")
+	v.Check(len(user.Password) >= 8, "password", "must be greater than 8 characters")
+	v.Check(len(user.Password) <= 50, "password", "must be less than 50 characters")
+
+	v.Check(user.Email != "", "email", "must be provided")
+	v.Check(len(user.Email) >= 20, "password", "must be greater than 20")
+	v.Check(len(user.Email) <= 50, "password", "must be less than 50")
 }
 
 func (u UserModel) Insert(user *User) error {
