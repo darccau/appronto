@@ -35,7 +35,6 @@ func (app *application) createUser(w http.ResponseWriter, r *http.Request) {
 		app.failedValidationResponse(w, r, v.Errors)
 		return
 	}
-	fmt.Fprintf(w, "%v+\n", input)
 
 	err = app.models.Users.Insert(user)
 	if err != nil {
@@ -111,8 +110,19 @@ func (app *application) updateUser(w http.ResponseWriter, r *http.Request) {
 	user.Password = input.Password
 	user.Email = input.Email
 
-	// check error
-	app.models.Users.Update(user)
+	v := validator.New()
+
+	if data.ValidateUsers(v, user); !v.Valid() {
+		app.failedValidationResponse(w, r, v.Errors)
+		return
+	}
+
+	err = app.models.Users.Update(user)
+
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
 
 	err = app.writeJSON(w, http.StatusOK, envelope{"user": user}, nil)
 	if err != nil {

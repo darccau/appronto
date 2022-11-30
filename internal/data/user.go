@@ -21,18 +21,16 @@ type UserModel struct {
 
 func ValidateUsers(v *validator.Validator, user *User) {
 	v.Check(user.FirstName != "", "first_name", "must be provided")
-	v.Check(len(user.FirstName) <= 50, "first_name", "most not be more than 500bytes long")
+	v.Check(len(user.FirstName) <= 50, "first_name", "most not be more than 500 characters long")
 
 	v.Check(user.LastName != "", "last_name", "must be provided")
-	v.Check(len(user.LastName) <= 50, "last_name", "most not be more than 500bytes long")
+	v.Check(len(user.LastName) <= 50, "last_name", "most not be more than 500 characters long")
 
 	v.Check(user.Password != "", "password", "must be provided")
-	v.Check(len(user.Password) >= 8, "password", "must be greater than 8 characters")
-	v.Check(len(user.Password) <= 50, "password", "must be less than 50 characters")
+	v.Check(len(user.Password) <= 50, "password", "must be less than 50 characters long")
 
 	v.Check(user.Email != "", "email", "must be provided")
-	v.Check(len(user.Email) >= 20, "password", "must be greater than 20")
-	v.Check(len(user.Email) <= 50, "password", "must be less than 50")
+	v.Check(len(user.Email) <= 50, "email", "must not be less than 50 characters long")
 }
 
 func (u UserModel) Insert(user *User) error {
@@ -78,11 +76,12 @@ func (u UserModel) Get(id int64) (*User, error) {
 	return &user, nil
 }
 
-func (u UserModel) Update(user *User) {
+func (u UserModel) Update(user *User) error {
 	query := `
   UPDATE users
   SET first_name = $1, last_name = $2, password = $3, email = $4
   where id = $5
+  RETURNING id
   `
 	args := []any{
 		user.Id,
@@ -92,7 +91,7 @@ func (u UserModel) Update(user *User) {
 		user.Email,
 	}
 
-	u.DB.QueryRow(query, args...)
+	return u.DB.QueryRow(query, args...).Scan(&user.Id)
 }
 
 func (u UserModel) Delete(id int64) error {

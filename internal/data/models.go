@@ -11,7 +11,7 @@ type Models struct {
 	Users interface {
 		Insert(user *User) error
 		Get(id int64) (*User, error)
-		Update(user *User)
+		Update(user *User) error
 		Delete(id int64) error
 	}
 }
