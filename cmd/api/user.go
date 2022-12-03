@@ -93,10 +93,10 @@ func (app *application) updateUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var input struct {
-		FirstName string `json:"first_name"`
-		LastName  string `json:"last_name"`
-		Password  string `json:"password"`
-		Email     string `json:"email"`
+		FirstName *string `json:"first_name"`
+		LastName  *string `json:"last_name"`
+		Password  *string `json:"password"`
+		Email     *string `json:"email"`
 	}
 
 	err = app.readJSON(w, r, &input)
@@ -105,10 +105,21 @@ func (app *application) updateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user.FirstName = input.FirstName
-	user.LastName = input.LastName
-	user.Password = input.Password
-	user.Email = input.Email
+	if input.FirstName != nil {
+		user.FirstName = *input.FirstName
+	}
+
+	if input.LastName != nil {
+		user.LastName = *input.LastName
+	}
+
+	if input.Password != nil {
+		user.Password = *input.Password
+	}
+
+	if input.Email != nil {
+		user.Email = *input.Email
+	}
 
 	v := validator.New()
 

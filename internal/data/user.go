@@ -84,11 +84,11 @@ func (u UserModel) Update(user *User) error {
   RETURNING id
   `
 	args := []any{
-		user.Id,
 		user.FirstName,
 		user.LastName,
 		user.Password,
 		user.Email,
+		user.Id,
 	}
 
 	return u.DB.QueryRow(query, args...).Scan(&user.Id)
