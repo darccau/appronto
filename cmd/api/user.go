@@ -164,5 +164,3 @@ func (app *application) deleteUser(w http.ResponseWriter, r *http.Request) {
 		app.serverErrorResponse(w, r, err)
 	}
 }
-
-// v := validator

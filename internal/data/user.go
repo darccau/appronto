@@ -1,8 +1,10 @@
 package data
 
 import (
+	"context"
 	"database/sql"
 	"errors"
+	"time"
 
 	"github.com/darccau/appronto/internal/validator"
 )
@@ -34,6 +36,7 @@ func ValidateUsers(v *validator.Validator, user *User) {
 }
 
 func (u UserModel) Insert(user *User) error {
+
 	query := `
   INSERT INTO users(first_name, last_name, password, email)
   VALUES ($1, $2, $3, $4)
@@ -41,7 +44,10 @@ func (u UserModel) Insert(user *User) error {
   `
 	args := []any{user.FirstName, user.LastName, user.Password, user.Email}
 
-	return u.DB.QueryRow(query, args...).Scan(&user.Id)
+  ctx, cancel := context.WithTimeout(context.Background(), 3 * time.Second)
+  defer cancel()
+
+	return u.DB.QueryRowContext(ctx, query, args...).Scan(&user.Id)
 }
 
 func (u UserModel) Get(id int64) (*User, error) {
@@ -54,16 +60,20 @@ func (u UserModel) Get(id int64) (*User, error) {
   FROM users
   WHERE id = $1
   `
-
 	var user User
 
-	err := u.DB.QueryRow(query, id).Scan(
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+
+	defer cancel()
+
+	err := u.DB.QueryRowContext(ctx, query, id).Scan(
 		&user.Id,
 		&user.FirstName,
 		&user.LastName,
 		&user.Password,
 		&user.Email,
 	)
+
 	if err != nil {
 		switch {
 		case errors.Is(err, sql.ErrNoRows):
@@ -91,7 +101,21 @@ func (u UserModel) Update(user *User) error {
 		user.Id,
 	}
 
-	return u.DB.QueryRow(query, args...).Scan(&user.Id)
+  ctx, cancel := context.WithTimeout(context.Background(), 3 * time.Second)
+  defer cancel()
+
+// TODO check if it's work
+	err := u.DB.QueryRowContext(ctx, query, args...).Scan(&user.Id)
+  if err != nil {
+  switch {
+    case errors.Is(err, sql.ErrNoRows):
+        return err 
+    default :
+    return err
+    }
+  }
+
+  return nil
 }
 
 func (u UserModel) Delete(id int64) error {
@@ -102,7 +126,10 @@ func (u UserModel) Delete(id int64) error {
   DELETE FROM users 
   WHERE id = $1`
 
-	result, err := u.DB.Exec(query, id)
+  ctx, cancel := context.WithTimeout(context.Background(), 3 * time.Second)
+  defer cancel()
+
+	result, err := u.DB.ExecContext(ctx, query, id)
 	if err != nil {
 		return err
 	}
