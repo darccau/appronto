@@ -4,7 +4,8 @@ GOMOD=$(GOCMD) mod
 GOTEST=$(GOCMD) test
 GOFLAGS := -v 
 LDFLAGS := -s -w
-# APPRONTO_DB_DSN='postgres://appronto:appronto@localhost/appronto?sslmode=disable'
+
+export APPRONTO_DB_DSN='postgres://appronto:appronto@localhost:54332/appronto?sslmode=disable'
 
 all: 
 	go run ./cmd/api

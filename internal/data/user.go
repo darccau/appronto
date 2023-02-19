@@ -44,13 +44,15 @@ func (u UserModel) Insert(user *User) error {
   `
 	args := []any{user.FirstName, user.LastName, user.Password, user.Email}
 
-  ctx, cancel := context.WithTimeout(context.Background(), 3 * time.Second)
-  defer cancel()
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
 
 	return u.DB.QueryRowContext(ctx, query, args...).Scan(&user.Id)
 }
 
 func (u UserModel) Get(id int64) (*User, error) {
+	var user User
+
 	if id < 1 {
 		return nil, ErrRecordNotFound
 	}
@@ -60,8 +62,6 @@ func (u UserModel) Get(id int64) (*User, error) {
   FROM users
   WHERE id = $1
   `
-	var user User
-
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 
 	defer cancel()
@@ -86,6 +86,51 @@ func (u UserModel) Get(id int64) (*User, error) {
 	return &user, nil
 }
 
+func (u UserModel) GetAll(email string, filter Filters) ([]*User, error) {
+	query := `
+    SELECT id, first_name, last_name, email, password 
+    FROM users
+    ORDER BY id
+	 `
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	rows, err := u.DB.QueryContext(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	users := []*User{}
+
+	for rows.Next() {
+
+		var user User
+
+		err := rows.Scan(
+			&user.Id,
+			&user.FirstName,
+			&user.LastName,
+			&user.Email,
+			&user.Password,
+		)
+
+		if err != nil {
+			return nil, err
+		}
+
+		users = append(users, &user)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return users, nil
+}
+
 func (u UserModel) Update(user *User) error {
 	query := `
   UPDATE users
@@ -101,21 +146,21 @@ func (u UserModel) Update(user *User) error {
 		user.Id,
 	}
 
-  ctx, cancel := context.WithTimeout(context.Background(), 3 * time.Second)
-  defer cancel()
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
 
-// TODO check if it's work
+	// TODO check if it's work
 	err := u.DB.QueryRowContext(ctx, query, args...).Scan(&user.Id)
-  if err != nil {
-  switch {
-    case errors.Is(err, sql.ErrNoRows):
-        return err 
-    default :
-    return err
-    }
-  }
+	if err != nil {
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
+			return err
+		default:
+			return err
+		}
+	}
 
-  return nil
+	return nil
 }
 
 func (u UserModel) Delete(id int64) error {
@@ -126,8 +171,8 @@ func (u UserModel) Delete(id int64) error {
   DELETE FROM users 
   WHERE id = $1`
 
-  ctx, cancel := context.WithTimeout(context.Background(), 3 * time.Second)
-  defer cancel()
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
 
 	result, err := u.DB.ExecContext(ctx, query, id)
 	if err != nil {

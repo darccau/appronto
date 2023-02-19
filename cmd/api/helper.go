@@ -6,9 +6,11 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 
+	"github.com/darccau/appronto/internal/validator"
 	"github.com/julienschmidt/httprouter"
 )
 
@@ -25,7 +27,7 @@ func (app *application) readJSON(w http.ResponseWriter, r *http.Request, dst any
 		var unmarshalTypeError *json.UnmarshalTypeError
 		var invalidUnmarshalError *json.InvalidUnmarshalError
 
-		// var maxBytesError *http.MaxBytesError
+		var maxBytesError *http.MaxBytesError
 
 		switch {
 		case errors.As(err, &syntaxError):
@@ -47,8 +49,8 @@ func (app *application) readJSON(w http.ResponseWriter, r *http.Request, dst any
 			fieldName := strings.TrimPrefix(err.Error(), "json: unknow field")
 			return fmt.Errorf("body contains unknown key %s", fieldName)
 
-		// case errors.As(err, &maxBytesError):
-		// 	return fmt.Errorf("body must not be larger than %d bytes", maxBytesError.Limit)
+		case errors.As(err, &maxBytesError):
+			return fmt.Errorf("body must not be larger than %d bytes", maxBytesError.Limit)
 
 		case errors.As(err, &invalidUnmarshalError):
 			panic(err)
@@ -94,4 +96,41 @@ func (app *application) writeJSON(w http.ResponseWriter, status int, data envelo
 	w.WriteHeader(status)
 	w.Write(js)
 	return nil
+}
+
+func (app *application) readString(qs url.Values, key string, defaultValue string) string {
+	s := qs.Get(key)
+
+	if s == "" {
+		return defaultValue
+	}
+
+	return s
+}
+
+func (app *application) readCSV(qs url.Values, key string, defaultValue []string) []string {
+	csv := qs.Get(key)
+
+	if csv == "" {
+		return defaultValue
+	}
+
+	return strings.Split(csv, ",")
+}
+
+func (app *application) readInt(qs url.Values, key string, defaultValue int, v *validator.Validator) int {
+	s := qs.Get(key)
+
+	if s == "" {
+		return defaultValue
+	}
+
+	i, err := strconv.Atoi(s)
+
+	if err != nil {
+		v.AddError(key, "Must be an integer value")
+		return defaultValue
+	}
+
+	return i
 }

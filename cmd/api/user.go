@@ -49,6 +49,48 @@ func (app *application) createUser(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 	}
+
+  
+}
+
+func (app *application) listUsers(w http.ResponseWriter, r *http.Request) {
+
+	var input struct {
+		FirstName string
+		LastName  string
+		Email     string
+    data.Filters
+	}
+
+	v := validator.New()
+	qs := r.URL.Query()
+
+	input.FirstName = app.readString(qs, "first_name", "")
+	input.LastName = app.readString(qs, "last_name", "")
+	input.Email = app.readString(qs, "email", "")
+
+	input.Filters.Page = app.readInt(qs, "page", 1, v)
+	input.Filters.PageSize = app.readInt(qs, "page_size", 20, v)
+
+	input.Filters.Sort = app.readString(qs, "sort", "id")
+  input.Filters.SortSafelist = []string{"id", "first_name", "last_name", "email", "password"}
+
+  if data.ValidateFilters(v, input.Filters); !v.Valid() {
+    app.failedValidationResponse(w, r, v.Errors)
+    return
+  }
+
+	// fmt.Fprintf(w, "%+v\n", input)
+  users, err := app.models.Users.GetAll(input.Email, input.Filters)
+  if err != nil {
+    app.serverErrorResponse(w, r, err)
+    return
+  }
+  err = app.writeJSON(w, http.StatusOK, envelope{"users": users}, nil)
+  if err != nil {
+    app.serverErrorResponse(w, r, err)
+  }
+
 }
 
 func (app *application) showUser(w http.ResponseWriter, r *http.Request) {
