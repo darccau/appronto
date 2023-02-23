@@ -49,7 +49,6 @@ func (app *application) createUser(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 	}
-
   
 }
 
@@ -73,19 +72,26 @@ func (app *application) listUsers(w http.ResponseWriter, r *http.Request) {
 	input.Filters.PageSize = app.readInt(qs, "page_size", 20, v)
 
 	input.Filters.Sort = app.readString(qs, "sort", "id")
-  input.Filters.SortSafelist = []string{"id", "first_name", "last_name", "email", "password"}
+  input.Filters.SortSafelist = []string{"id", "-id", "first_name", "last_name", "email", "password"}
 
   if data.ValidateFilters(v, input.Filters); !v.Valid() {
     app.failedValidationResponse(w, r, v.Errors)
     return
   }
 
-	// fmt.Fprintf(w, "%+v\n", input)
-  users, err := app.models.Users.GetAll(input.Email, input.Filters)
+  fmt.Printf("first name %v\n",input.FirstName)
+  fmt.Printf("last name: %v\n", input.LastName)
+  fmt.Printf("email: %v\n", input.Email)
+  fmt.Printf("page size: %v\n",input.PageSize)
+  fmt.Printf("page: %v\n", input.Page)
+  fmt.Println("######################################")
+
+  users, err := app.models.Users.GetAll(input.FirstName, input.LastName, input.Email, input.Filters)
   if err != nil {
     app.serverErrorResponse(w, r, err)
     return
   }
+
   err = app.writeJSON(w, http.StatusOK, envelope{"users": users}, nil)
   if err != nil {
     app.serverErrorResponse(w, r, err)

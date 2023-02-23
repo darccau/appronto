@@ -21,3 +21,4 @@ node_modules/
 build/
 .env
 .air.toml
+tmp/

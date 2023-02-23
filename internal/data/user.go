@@ -86,17 +86,20 @@ func (u UserModel) Get(id int64) (*User, error) {
 	return &user, nil
 }
 
-func (u UserModel) GetAll(email string, filter Filters) ([]*User, error) {
+func (u UserModel) GetAll(first_name string, last_name string, email string, filter Filters) ([]*User, error) {
 	query := `
     SELECT id, first_name, last_name, email, password 
     FROM users
+    WHERE (LOWER(email) = LOWER($1) OR $1 = '')
+    AND (LOWER(first_name) = LOWER($2) OR $2 = '')
+    AND (LOWER(last_name) = LOWER($3) OR $3 = '')
     ORDER BY id
 	 `
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	rows, err := u.DB.QueryContext(ctx, query)
+	rows, err := u.DB.QueryContext(ctx, query, email, first_name, last_name)
 	if err != nil {
 		return nil, err
 	}
@@ -138,6 +141,7 @@ func (u UserModel) Update(user *User) error {
   where id = $5
   RETURNING id
   `
+
 	args := []any{
 		user.FirstName,
 		user.LastName,
