@@ -93,12 +93,16 @@ func (u UserModel) GetAll(email string, filters Filters) ([]*User, error) {
     SELECT id, first_name, last_name, email, password 
     FROM users
     WHERE (to_tsvector('simple', email) @@ plainto_tsquery('simple', $1) OR $1 = '')
-    ORDER BY %s %s, id ASC`, filters.sortColumn(), filters.sortDirection())
+    ORDER BY %s %s, id ASC
+    LIMIT $2 OFFSET $3; 
+    `, filters.sortColumn(), filters.sortDirection())
 
   ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
   defer cancel()
 
-	rows, err := u.DB.QueryContext(ctx, query, email)
+  args :=[]any{email, filters.limit(),filters.offset()}
+
+	rows, err := u.DB.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, err
 	}
