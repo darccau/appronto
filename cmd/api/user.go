@@ -79,24 +79,16 @@ func (app *application) listUsers(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// fmt.Printf("first name %v\n",input.FirstName)
-	// fmt.Printf("last name: %v\n", input.LastName)
-	// fmt.Printf("email: %v\n", input.Email)
-	// fmt.Printf("page size: %v\n",input.PageSize)
-	// fmt.Printf("page: %v\n", input.Page)
-	// fmt.Println("######################################")
-
-	users, err := app.models.Users.GetAll(input.Email, input.Filters)
+	users, metadata, err := app.models.Users.GetAll(input.Email, input.Filters)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 		return
 	}
 
-	err = app.writeJSON(w, http.StatusOK, envelope{"users": users}, nil)
+  err = app.writeJSON(w, http.StatusOK, envelope{"users": users, "metadata": metadata}, nil)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 	}
-
 }
 
 func (app *application) showUser(w http.ResponseWriter, r *http.Request) {

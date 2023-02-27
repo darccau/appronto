@@ -87,35 +87,35 @@ func (u UserModel) Get(id int64) (*User, error) {
 	return &user, nil
 }
 
-func (u UserModel) GetAll(email string, filters Filters) ([]*User, error) {
-
+func (u UserModel) GetAll(email string, filters Filters) ([]*User, Metadata, error) {
 	query := fmt.Sprintf(`
-    SELECT id, first_name, last_name, email, password 
+    SELECT count(*) over(),id, first_name, last_name, email, password 
     FROM users
     WHERE (to_tsvector('simple', email) @@ plainto_tsquery('simple', $1) OR $1 = '')
     ORDER BY %s %s, id ASC
     LIMIT $2 OFFSET $3; 
     `, filters.sortColumn(), filters.sortDirection())
 
-  ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
-  defer cancel()
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
 
-  args :=[]any{email, filters.limit(),filters.offset()}
+	args := []any{email, filters.limit(), filters.offset()}
 
 	rows, err := u.DB.QueryContext(ctx, query, args...)
 	if err != nil {
-		return nil, err
+		return nil, Metadata{}, err
 	}
 
 	defer rows.Close()
 
+	totalRecords := 0
 	users := []*User{}
 
 	for rows.Next() {
-
 		var user User
 
 		err := rows.Scan(
+			&totalRecords,
 			&user.Id,
 			&user.FirstName,
 			&user.LastName,
@@ -124,17 +124,19 @@ func (u UserModel) GetAll(email string, filters Filters) ([]*User, error) {
 		)
 
 		if err != nil {
-			return nil, err
+			return nil, Metadata{}, err
 		}
 
 		users = append(users, &user)
 	}
 
 	if err = rows.Err(); err != nil {
-		return nil, err
+		return nil, Metadata{}, err
 	}
 
-	return users, nil
+	metadata := calculateMetadata(totalRecords, filters.Page, filters.PageSize)
+
+	return users, metadata, nil
 }
 
 func (u UserModel) Update(user *User) error {

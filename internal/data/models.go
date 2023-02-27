@@ -13,7 +13,7 @@ type Models struct {
 		Get(id int64) (*User, error)
 		Update(user *User) error
 		Delete(id int64) error
-		GetAll(email string, ilter Filters) ([]*User, error)
+		GetAll(email string, ilter Filters) ([]*User, Metadata, error)
 	}
 }
 
