@@ -43,7 +43,7 @@ func (app *application) createUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	headers := make(http.Header)
-	headers.Set("Location", fmt.Sprintf("/v1/movies/%d", user.Id))
+	headers.Set("Location", fmt.Sprintf("/v1/user/%d", user.Id))
 
 	err = app.writeJSON(w, http.StatusCreated, envelope{"user": user}, headers)
 	if err != nil {

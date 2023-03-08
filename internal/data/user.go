@@ -22,20 +22,6 @@ type UserModel struct {
 	DB *sql.DB
 }
 
-func ValidateUsers(v *validator.Validator, user *User) {
-	v.Check(user.FirstName != "", "first_name", "must be provided")
-	v.Check(len(user.FirstName) <= 50, "first_name", "most not be more than 500 characters long")
-
-	v.Check(user.LastName != "", "last_name", "must be provided")
-	v.Check(len(user.LastName) <= 50, "last_name", "most not be more than 500 characters long")
-
-	v.Check(user.Password != "", "password", "must be provided")
-	v.Check(len(user.Password) <= 50, "password", "must be less than 50 characters long")
-
-	v.Check(user.Email != "", "email", "must be provided")
-	v.Check(len(user.Email) <= 50, "email", "must not be less than 50 characters long")
-}
-
 func (u UserModel) Insert(user *User) error {
 
 	query := `
@@ -59,7 +45,7 @@ func (u UserModel) Get(id int64) (*User, error) {
 	}
 
 	query := `
-  SELECT id, first_name, last_name, password, email 
+  SELECT id, first_name, last_name, password, email
   FROM users
   WHERE id = $1
   `
@@ -89,11 +75,11 @@ func (u UserModel) Get(id int64) (*User, error) {
 
 func (u UserModel) GetAll(email string, filters Filters) ([]*User, Metadata, error) {
 	query := fmt.Sprintf(`
-    SELECT count(*) over(),id, first_name, last_name, email, password 
+    SELECT count(*) over(),id, first_name, last_name, email, password
     FROM users
     WHERE (to_tsvector('simple', email) @@ plainto_tsquery('simple', $1) OR $1 = '')
     ORDER BY %s %s, id ASC
-    LIMIT $2 OFFSET $3; 
+    LIMIT $2 OFFSET $3
     `, filters.sortColumn(), filters.sortDirection())
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
@@ -177,7 +163,7 @@ func (u UserModel) Delete(id int64) error {
 		return ErrRecordNotFound
 	}
 	query := `
-  DELETE FROM users 
+  DELETE FROM users
   WHERE id = $1`
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
@@ -198,4 +184,18 @@ func (u UserModel) Delete(id int64) error {
 	}
 
 	return nil
+}
+
+func ValidateUsers(v *validator.Validator, user *User) {
+	v.Check(user.FirstName != "", "first_name", "must be provided")
+	v.Check(len(user.FirstName) <= 50, "first_name", "most not be more than 500 characters long")
+
+	v.Check(user.LastName != "", "last_name", "must be provided")
+	v.Check(len(user.LastName) <= 50, "last_name", "most not be more than 500 characters long")
+
+	v.Check(user.Password != "", "password", "must be provided")
+	v.Check(len(user.Password) <= 50, "password", "must be less than 50 characters long")
+
+	v.Check(user.Email != "", "email", "must be provided")
+	v.Check(len(user.Email) <= 50, "email", "must not be less than 50 characters long")
 }
