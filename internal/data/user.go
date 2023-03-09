@@ -50,7 +50,6 @@ func (u UserModel) Get(id int64) (*User, error) {
   WHERE id = $1
   `
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
-
 	defer cancel()
 
 	err := u.DB.QueryRowContext(ctx, query, id).Scan(
