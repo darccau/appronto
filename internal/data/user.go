@@ -27,8 +27,8 @@ func (u UserModel) Insert(user *User) error {
 	query := `
   INSERT INTO users(first_name, last_name, password, email)
   VALUES ($1, $2, $3, $4)
-  RETURNING id
-  `
+  RETURNING id`
+
 	args := []any{user.FirstName, user.LastName, user.Password, user.Email}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
@@ -47,8 +47,8 @@ func (u UserModel) Get(id int64) (*User, error) {
 	query := `
   SELECT id, first_name, last_name, password, email
   FROM users
-  WHERE id = $1
-  `
+  WHERE id = $1`
+
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
@@ -128,9 +128,8 @@ func (u UserModel) Update(user *User) error {
 	query := `
   UPDATE users
   SET first_name = $1, last_name = $2, password = $3, email = $4
-  where id = $5
-  RETURNING id
-  `
+  WHERE id = $5
+  RETURNING id `
 
 	args := []any{
 		user.FirstName,

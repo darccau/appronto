@@ -65,24 +65,77 @@ func (app *application) showAppointment(w http.ResponseWriter, r *http.Request) 
 }
 
 func (app *application) deleteAppointment(w http.ResponseWriter, r *http.Request) {
-  id, err := app.readIdParam(r)
-  if err != nil {
-    app.notFoundResponse(w, r)
-  }
+	id, err := app.readIdParam(r)
+	if err != nil {
+		app.notFoundResponse(w, r)
+	}
 
-  err = app.models.Appointments.Delete(id)
-  if err != nil {
-     switch {
-     case errors.Is(err, data.ErrRecordNotFound):
-        app.notFoundResponse(w,r)
-     default:
-        app.serverErrorResponse(w,r,err)
-       }
-    return
-   }
+	err = app.models.Appointments.Delete(id)
+	if err != nil {
+		switch {
+		case errors.Is(err, data.ErrRecordNotFound):
+			app.notFoundResponse(w, r)
+		default:
+			app.serverErrorResponse(w, r, err)
+		}
+		return
+	}
 
-  err = app.writeJSON(w, http.StatusOK, envelope{"message": "appointment was sucessfully deleted"}, nil)
-  if err != nil {
-    app.serverErrorResponse(w, r, err)
-  }
+	err = app.writeJSON(w, http.StatusOK, envelope{"message": "appointment was sucessfully deleted"}, nil)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+	}
+}
+
+func (app *application) updateAppointment(w http.ResponseWriter, r *http.Request) {
+	id, err := app.readIdParam(r)
+	if err != nil {
+		app.notFoundResponse(w, r)
+	}
+
+	appointment, err := app.models.Appointments.Get(id)
+	if err != nil {
+		switch {
+		case errors.Is(err, data.ErrRecordNotFound):
+			app.notFoundResponse(w, r)
+		default:
+			app.serverErrorResponse(w, r, err)
+		}
+	}
+
+	var input struct {
+		DateTime *time.Time `json:"date_time"`
+		Reason   *string    `json:"reason"`
+		Notes    *string    `json:"notes"`
+	}
+
+	err = app.readJSON(w, r, &input)
+	if err != nil {
+		app.badRequestResponse(w, r, err)
+		return
+	}
+
+	if input.DateTime != nil {
+		appointment.DateTime = *input.DateTime
+	}
+
+	if input.Reason != nil {
+		appointment.Reason = *input.Reason
+	}
+
+	if input.Notes != nil {
+		appointment.Notes = *input.Notes
+	}
+
+	err = app.models.Appointments.Update(appointment)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	err = app.writeJSON(w, http.StatusOK, envelope{"appointment": appointment}, nil)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+	}
+
 }
