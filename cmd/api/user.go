@@ -7,7 +7,48 @@ import (
 
 	"github.com/darccau/appronto/internal/data"
 	"github.com/darccau/appronto/internal/validator"
+	"golang.org/x/crypto/bcrypt"
 )
+
+type User struct {
+	ID        string   `json:"id"`
+	CreatedAt string   `json:"created_at"`
+	FirstName string   `json:"first_name"`
+	LastName  string   `json:"last_name"`
+	Email     string   `json:"email"`
+	Password  password `json:"-"`
+	Activated bool     `json:"activated"`
+	Version   int      `json:"-"`
+}
+
+type password struct {
+	plaintext *string
+	hash      []byte
+}
+
+func (p *password) Set(plaintextPassword string) error {
+	hash, err := bcrypt.GenerateFromPassword([]byte(plaintextPassword), 12)
+	if err != nil {
+		return err
+	}
+
+	p.plaintext = &plaintextPassword
+	p.hash = hash
+
+	return nil
+}
+
+func (p *password) Matches(plaintextPassword string) (bool, error) {
+	err := bcrypt.CompareHashAndPassword(p.hash, []byte(plaintextPassword))
+	if err != nil {
+		switch {
+		case errors.Is(err, bcrypt.ErrMismatchedHashAndPassword):
+			return false, nil
+		default:
+			return false, err
+		}
+	}
+}
 
 func (app *application) createUser(w http.ResponseWriter, r *http.Request) {
 	var input struct {
@@ -85,7 +126,7 @@ func (app *application) listUsers(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-  err = app.writeJSON(w, http.StatusOK, envelope{"users": users, "metadata": metadata}, nil)
+	err = app.writeJSON(w, http.StatusOK, envelope{"users": users, "metadata": metadata}, nil)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 	}

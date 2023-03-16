@@ -137,5 +137,4 @@ func (app *application) updateAppointment(w http.ResponseWriter, r *http.Request
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 	}
-
 }

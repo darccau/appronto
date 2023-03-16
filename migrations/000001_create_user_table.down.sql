@@ -1,1 +1,1 @@
-DROP TABLE IF EXISTS user_access;
+DROP TABLE IF EXISTS users;
