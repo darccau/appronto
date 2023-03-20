@@ -2,6 +2,7 @@ package data
 
 import (
 	"context"
+  "fmt"
 	"database/sql"
 	"errors"
 	"time"
@@ -58,6 +59,154 @@ func (m UserModel) Insert(user *User) error {
 	return nil
 }
 
+func (u UserModel) GetByEmail(email string) (*User, error) {
+	var user User
+
+	query := `
+  SELECT id, created_at, first_name, last_name, password, email, activated, version
+  FROM users
+  WHERE email = $1`
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	err := u.DB.QueryRowContext(ctx, query, email).Scan(
+		&user.Id,
+		&user.CreatedAt,
+		&user.FirstName,
+		&user.LastName,
+		&user.Password,
+		&user.Email,
+		&user.Activated,
+	)
+
+	if err != nil {
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
+			return nil, ErrRecordNotFound
+		default:
+			return nil, err
+		}
+	}
+
+	return &user, nil
+}
+
+func (m UserModel) Update(user *User) error {
+	query := `
+  UPDATE users
+  SET first_name = $1, last_name = $2, password = $3, email = $4, activated = $5, version = version + 1
+  WHERE id = $5 AND version = $6
+  RETURNING version`
+
+	args := []any{
+		user.FirstName,
+		user.LastName,
+		user.Password.hash,
+		user.Activated,
+		user.Email,
+		user.Id,
+		user.Version,
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	// TODO check if it's work
+	err := m.DB.QueryRowContext(ctx, query, args...).Scan(&user.Version)
+	if err != nil {
+		switch {
+		case err.Error() == `pq: duplicate key value violates unique constraint "users_email_key"`:
+			return ErrDuplicateEmail
+		case errors.Is(err, sql.ErrNoRows):
+			// return ErrEditConflict
+			return err
+		default:
+			return err
+		}
+	}
+	return nil
+}
+
+func (u UserModel) GetAll(email string, filters Filters) ([]*User, Metadata, error) {
+	query := fmt.Sprintf(`
+    SELECT count(*) over(),id, first_name, last_name, email, password
+    FROM users
+    WHERE (to_tsvector('simple', email) @@ plainto_tsquery('simple', $1) OR $1 = '')
+    ORDER BY %s %s, id ASC
+    LIMIT $2 OFFSET $3
+    `, filters.sortColumn(), filters.sortDirection())
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	args := []any{email, filters.limit(), filters.offset()}
+
+	rows, err := u.DB.QueryContext(ctx, query, args...)
+	if err != nil {
+      		return nil, Metadata{}, err
+	}
+
+	defer rows.Close()
+
+	totalRecords := 0
+	users := []*User{}
+
+	for rows.Next() {
+		var user User
+
+		err := rows.Scan(
+			&totalRecords,
+			&user.Id,
+			&user.FirstName,
+			&user.LastName,
+			&user.Email,
+			&user.Password,
+		)
+
+		if err != nil {
+			return nil, Metadata{}, err
+		}
+
+		users = append(users, &user)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, Metadata{}, err
+	}
+
+	metadata := calculateMetadata(totalRecords, filters.Page, filters.PageSize)
+
+	return users, metadata, nil
+}
+
+func (u UserModel) Delete(id int64) error {
+	if id < 1 {
+		return ErrRecordNotFound
+	}
+	query := `
+  DELETE FROM users
+  WHERE id = $1`
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	result, err := u.DB.ExecContext(ctx, query, id)
+	if err != nil {
+		return err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rowsAffected == 0 {
+		return ErrRecordNotFound
+	}
+
+	return nil
+}
 
 func (p *password) Set(plaintextPassword string) error {
 	hash, err := bcrypt.GenerateFromPassword([]byte(plaintextPassword), 12)

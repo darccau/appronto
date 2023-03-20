@@ -9,6 +9,7 @@ import (
 
 	"github.com/darccau/appronto/internal/data"
 	"github.com/darccau/appronto/internal/jsonlog"
+	"github.com/darccau/appronto/internal/mailer"
 	_ "github.com/lib/pq"
 )
 
@@ -29,12 +30,21 @@ type config struct {
 		burst  int
 		enable bool
 	}
+
+	smtp struct {
+		host     string
+		port     int
+		username string
+		password string
+		sender   string
+	}
 }
 
 type application struct {
 	config config
 	logger *jsonlog.Logger
 	models data.Models
+	mailer mailer.Mailer
 }
 
 func main() {
@@ -48,9 +58,15 @@ func main() {
 	flag.IntVar(&cfg.db.maxIdleConns, "db-max-idle-conns", 25, "PostgresSQL max idle connections")
 	flag.StringVar(&cfg.db.maxIdleTime, "db-max-idle-time", "15m", "PostgresSQL max connection idle time")
 
-	flag.Float64Var(&cfg.limiter.rps, "limiter-rps", 2, "Rate limiter maximum requests per second")
-	flag.IntVar(&cfg.limiter.burst, "limiter-burst", 4, "Rate limiter maximum burst")
 	flag.BoolVar(&cfg.limiter.enable, "limiter-enabled", true, "Enable rate limiter")
+	flag.Float64Var(&cfg.limiter.rps, "limiter-rpx", 2, "rate limiter maximum requests per second")
+	flag.IntVar(&cfg.limiter.burst, "limiter-burst", 4, "rate limiter maximum burst")
+
+	flag.StringVar(&cfg.smtp.host, "smtp-host", "smtp.mailtrap.io", "SMTP host")
+	flag.IntVar(&cfg.smtp.port, "smtp-port", 25, "SMTP port")
+	flag.StringVar(&cfg.smtp.username, "smtp-username", "a012eb60e179dc", "SMTP username")
+	flag.StringVar(&cfg.smtp.password, "smtp-password", "27e7246e65dc4a", "SMTP password")
+	flag.StringVar(&cfg.smtp.sender, "smtp-sender", "APPRONTO ", "SMTP password")
 
 	flag.Parse()
 
@@ -68,6 +84,7 @@ func main() {
 		config: cfg,
 		logger: logger,
 		models: data.NewModels(db),
+		mailer: mailer.New(cfg.smtp.host, cfg.smtp.port, cfg.smtp.username, cfg.smtp.password, cfg.smtp.sender),
 	}
 
 	err = app.serve()
