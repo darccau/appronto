@@ -235,6 +235,7 @@ func (p *password) Matches(plaintextPassword string) (bool, error) {
 
 func ValidateEmail(v *validator.Validator, email string) {
 	v.Check(email != "", "email", "must be provided")
+  // TODO check validate email regex
 	// v.Check(validator.Matches(email, validator.EmailRX), "email", "must be a valid email address")
 }
 

@@ -8,4 +8,5 @@ services:
       - POSTGRES_PASSWORD=appronto
       - EDITOR=vi
     ports:
-      - '5432:5432'
+      - '54332:5432'
+      # cache

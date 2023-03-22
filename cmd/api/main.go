@@ -62,11 +62,11 @@ func main() {
 	flag.Float64Var(&cfg.limiter.rps, "limiter-rpx", 2, "rate limiter maximum requests per second")
 	flag.IntVar(&cfg.limiter.burst, "limiter-burst", 4, "rate limiter maximum burst")
 
-	flag.StringVar(&cfg.smtp.host, "smtp-host", "smtp.mailtrap.io", "SMTP host")
-	flag.IntVar(&cfg.smtp.port, "smtp-port", 25, "SMTP port")
+	flag.StringVar(&cfg.smtp.host, "smtp-host", "sandbox.smtp.mailtrap.io", "SMTP host")
+	flag.IntVar(&cfg.smtp.port, "smtp-port", 2525, "SMTP port")
 	flag.StringVar(&cfg.smtp.username, "smtp-username", "a012eb60e179dc", "SMTP username")
 	flag.StringVar(&cfg.smtp.password, "smtp-password", "27e7246e65dc4a", "SMTP password")
-	flag.StringVar(&cfg.smtp.sender, "smtp-sender", "APPRONTO ", "SMTP password")
+	flag.StringVar(&cfg.smtp.sender, "smtp-sender", "APPRONTO <no-reply@appronto.net>", "SMTP password")
 
 	flag.Parse()
 
