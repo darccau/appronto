@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	activation = "activated"
+	ScopeActivation = "activated"
 )
 
 type TokenModel struct {
@@ -33,7 +33,8 @@ func (m TokenModel) New(userId int64, ttl time.Duration, scope string) (*Token, 
 		return nil, err
 	}
 
-	err = m.Insert()
+	err = m.Insert(token)
+
 	return token, err
 }
 
