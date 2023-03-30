@@ -47,7 +47,7 @@ func (app *application) createUser(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		switch {
 		case errors.Is(err, data.ErrDuplicateEmail):
-			v.AddError("Email", "a user with this email address already exists")
+			v.AddError("email", "a user with this email address already exists")
 			app.failedValidationResponse(w, r, v.Errors)
 		default:
 			app.serverErrorResponse(w, r, err)
@@ -105,6 +105,18 @@ func (app *application) activateUser(w http.ResponseWriter, r *http.Request) {
 			app.serverErrorResponse(w, r, err)
 		}
 		return
+	}
+
+	user.Activated = true
+
+	err = app.models.Users.Update(user)
+	if err != nil {
+		switch {
+		case errors.Is(err, data.ErrEditConflict):
+			app.editConflictResponse(w, r)
+		default:
+			app.serverErrorResponse(w, r, err)
+		}
 	}
 
 	err = app.models.Tokens.DeleteAllForUsers(data.ScopeActivation, user.Id)

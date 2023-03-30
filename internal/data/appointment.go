@@ -46,6 +46,7 @@ func (a AppointmentModel) Get(id int64) (*Appointment, error) {
   SELECT id, date_time, reason, notes, create_at, version
   FROM appointments
   WHERE id = $1`
+
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 

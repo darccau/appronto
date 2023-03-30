@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	ScopeActivation = "activated"
+	ScopeActivation = "activation"
 )
 
 type TokenModel struct {

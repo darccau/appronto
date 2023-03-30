@@ -129,8 +129,13 @@ func (app *application) updateAppointment(w http.ResponseWriter, r *http.Request
 
 	err = app.models.Appointments.Update(appointment)
 	if err != nil {
-		app.serverErrorResponse(w, r, err)
-		return
+		switch {
+		case errors.Is(err, data.ErrEditConflict):
+			app.editConflictResponse(w, r)
+		default:
+			app.serverErrorResponse(w, r, err)
+			return
+		}
 	}
 
 	err = app.writeJSON(w, http.StatusOK, envelope{"appointment": appointment}, nil)

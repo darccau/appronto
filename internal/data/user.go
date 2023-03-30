@@ -2,9 +2,10 @@ package data
 
 import (
 	"context"
-  "fmt"
+	"crypto/sha256"
 	"database/sql"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/darccau/appronto/internal/validator"
@@ -12,7 +13,7 @@ import (
 )
 
 type User struct {
-	Id        int64   `json:"id"`
+	Id        int64    `json:"id"`
 	CreatedAt string   `json:"created_at"`
 	FirstName string   `json:"first_name"`
 	LastName  string   `json:"last_name"`
@@ -144,7 +145,7 @@ func (u UserModel) GetAll(email string, filters Filters) ([]*User, Metadata, err
 
 	rows, err := u.DB.QueryContext(ctx, query, args...)
 	if err != nil {
-      		return nil, Metadata{}, err
+		return nil, Metadata{}, err
 	}
 
 	defer rows.Close()
@@ -208,6 +209,48 @@ func (u UserModel) Delete(id int64) error {
 	return nil
 }
 
+func (m UserModel) GetForToken(tokenScope, tokenPlaintext string) (*User, error) {
+	tokenHash := sha256.Sum256([]byte(tokenPlaintext))
+
+	query := `
+  SELECT users.id, users.created_at, users.first_name, users.last_name, users.email, users.password, users.activated, users.version
+  FROM users
+  INNER JOIN tokens
+  ON users.id = tokens.user_id
+  WHERE tokens.hash = $1
+  AND tokens.scope = $2
+  AND tokens.expiry > $3`
+
+	args := []any{tokenHash[:], tokenScope, time.Now()}
+
+	var user User
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	err := m.DB.QueryRowContext(ctx, query, args...).Scan(
+		&user.Id,
+		&user.CreatedAt,
+		&user.FirstName,
+		&user.LastName,
+		&user.Email,
+		&user.Password.hash,
+		&user.Activated,
+		&user.Version,
+	)
+
+	if err != nil {
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
+			return nil, ErrRecordNotFound
+		default:
+			return nil, err
+		}
+	}
+
+	return &user, nil
+}
+
 func (p *password) Set(plaintextPassword string) error {
 	hash, err := bcrypt.GenerateFromPassword([]byte(plaintextPassword), 12)
 	if err != nil {
@@ -235,7 +278,7 @@ func (p *password) Matches(plaintextPassword string) (bool, error) {
 
 func ValidateEmail(v *validator.Validator, email string) {
 	v.Check(email != "", "email", "must be provided")
-  // TODO check validate email regex
+	// TODO check validate email regex
 	// v.Check(validator.Matches(email, validator.EmailRX), "email", "must be a valid email address")
 }
 
