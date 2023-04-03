@@ -76,9 +76,10 @@ func (u UserModel) GetByEmail(email string) (*User, error) {
 		&user.CreatedAt,
 		&user.FirstName,
 		&user.LastName,
-		&user.Password,
+		&user.Password.hash,
 		&user.Email,
 		&user.Activated,
+		&user.Version,
 	)
 
 	if err != nil {
