@@ -12,6 +12,8 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+var AnonymousUser = &User{}
+
 type User struct {
 	Id        int64    `json:"id"`
 	CreatedAt string   `json:"created_at"`
@@ -21,6 +23,10 @@ type User struct {
 	Password  password `json:"-"`
 	Activated bool     `json:"activated"`
 	Version   int      `json:"-"`
+}
+
+func(u *User) IsAnonimous() bool {
+  return u == AnonymousUser
 }
 
 type password struct {
