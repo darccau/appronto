@@ -14,6 +14,12 @@ func (app *application) routes() http.Handler {
 	router.MethodNotAllowed = http.HandlerFunc(app.methodNotAllowedResponse)
 
 	router.HandlerFunc(http.MethodGet, "/v1/healthcheck", app.healthcheckHandler)
+
+	router.HandlerFunc(http.MethodPost, "/v1/appointments", app.requireActivateUser(app.createAppointments))
+	router.HandlerFunc(http.MethodGet, "/v1/appointments/:id", app.requireActivateUser(app.showAppointment))
+	router.HandlerFunc(http.MethodDelete, "/v1/appointments/:id", app.requireActivateUser(app.deleteAppointment))
+	router.HandlerFunc(http.MethodPatch, "/v1/appointments/:id", app.requireActivateUser(app.updateAppointment))
+
 	router.HandlerFunc(http.MethodPost, "/v1/user", app.createUser)
 	router.HandlerFunc(http.MethodPut, "/v1/user/activated", app.activateUser)
 
@@ -23,11 +29,6 @@ func (app *application) routes() http.Handler {
 	// router.HandlerFunc(http.MethodGet, "/v1/user", app.listUsers)
 	// router.HandlerFunc(http.MethodPatch, "/v1/user/", app.updateUser)
 	// router.HandlerFunc(http.MethodDelete, "/v1/user/:id", app.deleteUser)
-
-	router.HandlerFunc(http.MethodPost, "/v1/appointments", app.createAppointments)
-	router.HandlerFunc(http.MethodGet, "/v1/appointments/:id", app.showAppointment)
-	router.HandlerFunc(http.MethodDelete, "/v1/appointments/:id", app.deleteAppointment)
-	router.HandlerFunc(http.MethodPatch, "/v1/appointments/:id", app.updateAppointment)
 
 	return app.recoverPanic(app.rateLimit(app.authenticate(router)))
 }
