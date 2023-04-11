@@ -127,7 +127,7 @@ func (app *application) authenticate(next http.Handler) http.Handler {
 	})
 }
 
-func (app *application) requireActivateUser(next http.HandlerFunc) http.HandlerFunc {
+func (app *application) requireAuthenticatedUser(next http.HandlerFunc) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		user := app.contextGetUser(r)
 
@@ -136,6 +136,14 @@ func (app *application) requireActivateUser(next http.HandlerFunc) http.HandlerF
 			return
 		}
 
+		next.ServeHTTP(w, r)
+	})
+}
+
+func (app *application) requireActivatedUser(next http.HandlerFunc) http.HandlerFunc {
+	fn := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		user := app.contextGetUser(r)
+
 		if !user.Activated {
 			app.inactiveAccountResponse(w, r)
 			return
@@ -143,34 +151,27 @@ func (app *application) requireActivateUser(next http.HandlerFunc) http.HandlerF
 
 		next.ServeHTTP(w, r)
 	})
+
+	return app.requireAuthenticatedUser(fn)
 }
 
-func (app *application) requireAuthenticatedUser(next http.HandlerFunc) http.HandlerFunc {
-  return http.HandlerFunc(func (w http.ResponseWriter, r *http.Request) {
-    user := app.contextGetUser(r)
+func (app *application) requirePermission(code string, next http.HandlerFunc) http.HandlerFunc {
+	fn := func(w http.ResponseWriter, r *http.Request) {
+		user := app.contextGetUser(r)
 
-    if user.IsAnonimous() {
-      app.authenticationRequiredResponse(w,r)
-      return
-    }
+		permissions, err := app.models.Permissions.GetAllForUser(user.Id)
+		if err != nil {
+			app.serverErrorResponse(w, r, err)
+			return
+		}
 
-    next.ServeHTTP(w, r)
-  })
+		if !permissions.Include(code) {
+			app.notPermittedResponse(w, r)
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	}
+
+	return app.requireActivatedUser(fn)
 }
-
-func (app *application) requireActivatedUser(next http.HandlerFunc) http.HandlerFunc {
-  fn :=  http.HandlerFunc(func (w http.ResponseWriter, r *http.Request) { 
-    user := app.contextGetUser(r)
-
-    if !user.Activated {
-      app.inactiveAccountResponse(w, r)
-      return 
-    }
-
-    next.ServeHTTP(w, r)
-  })
-
-  return app.requireAuthenticatedUser(fn)
-}
-
-
