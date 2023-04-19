@@ -1,6 +1,7 @@
 package main
 
 import (
+	"expvar"
 	"net/http"
 
 	"github.com/julienschmidt/httprouter"
@@ -16,7 +17,7 @@ func (app *application) routes() http.Handler {
 	router.HandlerFunc(http.MethodGet, "/v1/healthcheck", app.healthcheckHandler)
 
 	// router.HandlerFunc(http.MethodGet, "/v1/appointments/:id", app.requirePermission("appointments:read", app.listAppointment))
-  router.HandlerFunc(http.MethodPost, "/v1/appointments", app.requirePermission("appointments:write", app.createAppointments))
+	router.HandlerFunc(http.MethodPost, "/v1/appointments", app.requirePermission("appointments:write", app.createAppointments))
 	router.HandlerFunc(http.MethodGet, "/v1/appointments/:id", app.requirePermission("appointments:read", app.showAppointment))
 	router.HandlerFunc(http.MethodPatch, "/v1/appointments/:id", app.requirePermission("appointments:read", app.updateAppointment))
 	router.HandlerFunc(http.MethodDelete, "/v1/appointments/:id", app.requirePermission("appointments:read", app.deleteAppointment))
@@ -25,6 +26,8 @@ func (app *application) routes() http.Handler {
 	router.HandlerFunc(http.MethodPut, "/v1/user/activated", app.activateUser)
 
 	router.HandlerFunc(http.MethodPost, "/v1/token/authentication", app.createAuthenticationToken)
+
+	router.Handler(http.MethodGet, "/debug/vars", expvar.Handler())
 
 	// router.HandlerFunc(http.MethodGet, "/v1/user/:id", app.showUser)
 	// router.HandlerFunc(http.MethodGet, "/v1/user", app.listUsers)
