@@ -1,35 +1,106 @@
-GOCMD=go
-GOBUILD=$(GOCMD) build
-GOMOD=$(GOCMD) mod
-GOTEST=$(GOCMD) test
-GOFLAGS := -v 
-LDFLAGS := -s -w
+include .envrc
 
-export APPRONTO_DB_DSN='postgres://appronto:appronto@localhost:54332/appronto?sslmode=disable'
-MIGRATION_NAME := $(firstword $(MAKECMDGOALS))
 
+# ==================================================================================== #
+# HELPERS
+# ==================================================================================== #
+
+## help: print this help message
+.PHONY: help
+help:
+	@echo 'Usage:'
+	@sed -n 's/^##//p' ${MAKEFILE_LIST} | column -t -s ':' | sed -e 's/^//'
+
+.PHONY: confirm
 confirm:
- @echo -n 'Are you sure? [y/N] ' && read ans && [ $${ans:-N} = y ]
+	@echo 'Are you sure? [y/N]' && read ans && [ $${ans:-N} = y ]
 
-all: 
-	go run ./cmd/api
+# ==================================================================================== #
+# DEVELOPMENT
+# ==================================================================================== #
 
-build:
-	$(GOBUILD) $(GOFLAGS) -ldflags '$(LDFLAGS)' -o "appronto" cmd/api/main.go
+## run/api: run the cmd/api application
+.PHONY: run/api
+run/api:
+	@go run ./cmd/api -db-dsn=${APPRONTO_DB_DSN}
 
-test: 
-	$(GOTEST) $(GOFLAGS) ./...
+## db/psql: connect to the database using psql
+.PHONY: db/sql
+db/psql:
+	@echo ${APPRONTO_DB_DSN}
+	psql ${APPRONTO_DB_DSN}
 
-migration: confirm
-	@echo 'Creating migration files for ${name}..'
+## db/migrations/new name=$1: create a new database migration
+.PHONY: db/migrations/new
+db/migrations/new:
+	@echo 'Creating migration files for ${name}'
 	migrate create -seq -ext=.sql -dir=./migrations ${name}
 
-migrate: cofirm
-	@echo 'Creating migration files for ${name}..'
-	migrate -path ./migrations -database $(APPRONTO_DB_DSN) up
+## db/migrations/up: apply all up database migrations
+.PHONY: db/migrations/up
+db/migrations/up: confirm
+	@echo 'Running up migrations...'
+	migrate -path="./migrations" -database "postgres://appronto:${DB_PW}@localhost/appronto?sslmode=disable" up
 
-rollback: confirm
-	migrate -path ./migrations -database $(APPRONTO_DB_DSN) down
 
-tidy:
-	$(GOMOD) tidy
+# ==================================================================================== #
+# QUALITY CONTROL
+# ==================================================================================== #
+
+## audit: tidy dependencies and format, vet, and test all code
+.PHONY: audit
+audit: vendor
+	@echo 'Formatting code...'
+	go fmt ./...
+	@echo 'Vetting code...'
+	go vet ./...
+	staticcheck ./...
+	@echo 'Running tests...'
+	go test -race -vet=off ./...
+
+## vendor: tidy and vendor dependencies
+.PHONY: vendor
+vendor:
+	@echo 'Tidying and verifying module dependencies'
+	go mod tidy
+	go mod verify
+	@echo 'Vendoring dependencies'
+	go mod vendor
+
+# ==================================================================================== #
+# BUILD
+# ==================================================================================== #
+
+## build/api: build the cmd/api application
+.PHONY: build/api
+build/api:
+	@echo 'Building cmd/api...'
+	go build -ldflags '-s -w' -o ./bin/api ./cmd/api
+	GOOS=linux GOARCH=amd64 go build -ldflags='-s -w' -o=./bin/linux_amd64/api ./cmd/api
+
+
+# ==================================================================================== #
+# PRODUCTION
+# ==================================================================================== #
+
+production_host_ip = '144.126.210.226'
+
+## production/connect: connect to the production server
+.PHONY: production/connect
+production/connect:
+	ssh appronto@${production_host_ip}
+
+## production/deploy/api: deploy the api to production
+.PHONY: production/deploy/api
+production/deploy/api:
+	rsync -P ./bin/linux_amd64/api appronto@${production_host_ip}:~
+	rsync -rP --delete ./migrations appronto@${production_host_ip}:~
+	rsync -P ./remote/production/api.service appronto@${production_host_ip}:~
+	rsync -P ./remote/production/Caddyfile appronto@${production_host_ip}:~
+	ssh -t appronto@${production_host_ip} '\
+		migrate -path ~/migrations -database $$appronto_DB_DSN up \
+        && sudo mv ~/api.service /etc/systemd/system/ \
+        && sudo systemctl enable api \
+        && sudo systemctl restart api \
+        && sudo mv ~/Caddyfile /etc/caddy/ \
+        && sudo systemctl reload caddy \
