@@ -62,14 +62,14 @@ func (m PermissionModel) GetAllForUser(userId int64) (Permissions, error) {
 	return permissions, nil
 }
 
-func (m PermissionModel) AddForUser(userId int64, codes... string) error {
-  query := `
+func (m PermissionModel) AddForUser(userId int64, codes ...string) error {
+	query := `
   INSERT INTO users_permissions
   select $1, permission.id FROM permissions WHERE permissions.code = ANY($2)`
 
-  ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
-  defer cancel()
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
 
-  _, err := m.DB.ExecContext(ctx, query, userId, pq.Array(codes))
-  return err
+	_, err := m.DB.ExecContext(ctx, query, userId, pq.Array(codes))
+	return err
 }
